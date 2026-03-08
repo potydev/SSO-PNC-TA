@@ -15,7 +15,7 @@ type Project struct {
 	URLDemo         string    `json:"url_demo"`
 	URLRepository   string    `json:"url_repository"`
 	URLGambar       string    `json:"url_gambar"` // Cover image
-	Status          string    `gorm:"type:enum('Draft','Published');default:'Draft'" json:"status"`
+	Status          string    `gorm:"default:'Draft'" json:"status"`
 	ViewCount       int       `gorm:"default:0" json:"view_count"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
