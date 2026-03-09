@@ -6,10 +6,10 @@ Platform showcase project mahasiswa TRPL dengan SSO Google OAuth2 (@pnc.ac.id).
 
 **Backend:**
 - Golang (Gin Framework)
-- MySQL
+- SQLite
 - GORM
 - JWT Authentication
-- Google OAuth2
+- Google OAuth2 (via service terpisah `sso-auth`)
 
 **Frontend:**
 - React 18
@@ -46,6 +46,8 @@ TRPL-Web/
 
 ## ⚙️ Quick Setup
 
+> Auth dipisah ke service `sso-auth` di level workspace.
+
 ### 1. Backend Setup
 
 ```bash
@@ -58,10 +60,8 @@ go mod download
 cp .env.example .env
 # Edit .env with your credentials
 
-# Create database
-mysql -u root -p
-CREATE DATABASE trpl_web CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-EXIT;
+# Buat folder database SQLite jika belum ada
+mkdir -p database
 
 # Run server
 go run main.go
@@ -87,14 +87,23 @@ npm run dev
 
 Frontend will run on `http://localhost:5173`
 
-### 3. Google OAuth2 Setup
+### 3. SSO Auth Service Setup
+
+```bash
+cd /home/potydev/SSO-PNC-TA/sso-auth
+cp .env.example .env
+go mod tidy
+go run .
+```
+
+### 4. Google OAuth2 Setup
 
 1. Buka [Google Cloud Console](https://console.cloud.google.com/)
 2. Buat project baru
 3. Enable **Google+ API**
 4. Credentials → Create OAuth 2.0 Client ID
-5. Authorized redirect URIs: `http://localhost:8080/api/auth/google/callback`
-6. Copy **Client ID** dan **Client Secret** ke backend `.env`
+5. Authorized redirect URIs: `http://localhost:9090/api/auth/google/callback`
+6. Copy **Client ID** dan **Client Secret** ke `sso-auth/.env`
 
 ## 🎯 Features
 
@@ -119,10 +128,7 @@ Frontend will run on `http://localhost:5173`
 ## 📡 API Endpoints
 
 ### Auth
-- `GET /api/auth/google` - Get Google OAuth URL
-- `GET /api/auth/google/callback` - OAuth callback
-- `GET /api/auth/me` - Get current user (protected)
-- `POST /api/auth/logout` - Logout
+- Endpoint auth dipindah ke service `sso-auth` (`http://localhost:9090/api/auth/*`)
 
 ### Projects
 - `GET /api/projects` - List published projects

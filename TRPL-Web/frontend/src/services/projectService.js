@@ -1,13 +1,31 @@
 import api from './api';
+import axios from 'axios';
+
+const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL || 'http://localhost:9090/api';
+
+const authApi = axios.create({
+  baseURL: AUTH_API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+authApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export const authService = {
   getGoogleAuthURL: async () => {
-    const response = await api.get('/auth/google');
+    const response = await authApi.get('/auth/google');
     return response.data.url;
   },
 
   getCurrentUser: async () => {
-    const response = await api.get('/auth/me');
+    const response = await authApi.get('/auth/me');
     return response.data.user;
   },
 

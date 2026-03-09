@@ -10,15 +10,6 @@ import (
 func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api")
 	{
-		// Auth routes (public)
-		auth := api.Group("/auth")
-		{
-			auth.GET("/google", controllers.GoogleLogin)
-			auth.GET("/google/callback", controllers.GoogleCallback)
-			auth.GET("/me", middleware.AuthMiddleware(), controllers.GetCurrentUser)
-			auth.POST("/logout", middleware.AuthMiddleware(), controllers.Logout)
-		}
-
 		// Project routes
 		projects := api.Group("/projects")
 		{
