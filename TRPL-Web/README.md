@@ -1,54 +1,83 @@
 # TRPL-Web - Project Showcase Platform
 
-Platform showcase project mahasiswa TRPL dengan SSO Google OAuth2 (@pnc.ac.id).
+Platform showcase project mahasiswa TRPL dengan Google OAuth2 SSO (@pnc.ac.id). Desain mengikuti macOS design language yang clean dan minimalis.
 
 ## 🚀 Tech Stack
 
 **Backend:**
 - Golang (Gin Framework)
-- SQLite
+- SQLite (shared dengan sso-auth)
 - GORM
-- JWT Authentication
-- Google OAuth2 (via service terpisah `sso-auth`)
+- JWT Validation (OAuth handled by sso-auth)
 
 **Frontend:**
-- React 18
-- Vite
-- Tailwind CSS
-- React Router
+- React 19
+- Vite 7
+- Tailwind CSS v4 (macOS-inspired design)
+- React Router v7
 - Axios
+
+**Authentication:**
+- Separate `sso-auth` service (Go + Gin + Google OAuth2)
+- JWT tokens (24-hour validity)
+- Domain restriction: @pnc.ac.id only
 
 ## 📁 Project Structure
 
 ```
 TRPL-Web/
-├── backend/              # Golang API server
-│   ├── config/           # Database config
-│   ├── controllers/      # Request handlers
-│   ├── middleware/       # Auth middleware
-│   ├── models/           # Database models
+├── backend/              # Golang API server (port 8080)
+│   ├── config/           # Database config (SQLite)
+│   ├── controllers/      # Request handlers (Project CRUD)
+│   ├── middleware/       # JWT validation middleware
+│   ├── models/           # Database models (Project)
 │   ├── routes/           # API routes
-│   ├── utils/            # JWT helpers
+│   ├── utils/            # JWT validation helpers
 │   ├── main.go           # Entry point
 │   ├── .env.example      # Environment template
-│   └── README.md         # Backend docs
+│   └── README.md         # Backend documentation
 │
-└── frontend/             # React app
+└── frontend/             # React app (port 5173)
     ├── src/
-    │   ├── components/   # UI components
-    │   ├── pages/        # Page components
-    │   ├── services/     # API services
-    │   ├── context/      # Auth context
-    │   └── App.jsx       # Main app
+    │   ├── components/   # Navbar, ProtectedRoute
+    │   ├── pages/        # Login, Dashboard, AuthCallback
+    │   ├── services/     # API services (dual endpoints)
+    │   ├── context/      # AuthContext (global state)
+    │   ├── App.jsx       # Main app with routes
+    │   ├── main.jsx      # Entry point
+    │   └── index.css     # Tailwind v4 styles
     ├── .env.example      # Environment template
-    └── README.md         # Frontend docs
+    └── README.md         # Frontend documentation
+
+Note: Authentication logic ada di /home/potydev/SSO-PNC-TA/sso-auth (port 9090)
 ```
 
 ## ⚙️ Quick Setup
 
-> Auth dipisah ke service `sso-auth` di level workspace.
+### Prerequisites
+- Go 1.25+
+- Node.js 18+
+- SSO Auth Service running (port 9090)
 
-### 1. Backend Setup
+### 1. SSO Auth Service (Run First!)
+
+```bash
+cd /home/potydev/SSO-PNC-TA/sso-auth
+
+# Setup environment
+cp .env.example .env
+# Edit .env dengan Google OAuth credentials
+
+# Install dependencies
+go mod tidy
+
+# Run service
+go run .
+```
+
+SSO service akan jalan di `http://localhost:9090`
+
+### 2. Backend Setup
 
 ```bash
 cd backend
@@ -58,18 +87,16 @@ go mod download
 
 # Setup environment
 cp .env.example .env
-# Edit .env with your credentials
-
-# Buat folder database SQLite jika belum ada
-mkdir -p database
+# Edit: JWT_SECRET harus sama dengan sso-auth!
+# Edit: DB_DATABASE path ke SQLite (shared dengan sso-auth)
 
 # Run server
-go run main.go
+go run .
 ```
 
-Backend will run on `http://localhost:8080`
+Backend akan jalan di `http://localhost:8080`
 
-### 2. Frontend Setup
+### 3. Frontend Setup
 
 ```bash
 cd frontend
@@ -79,77 +106,153 @@ npm install
 
 # Setup environment
 cp .env.example .env
-# Edit .env if needed
+# Edit jika perlu (default sudah benar)
 
 # Run dev server
 npm run dev
 ```
 
-Frontend will run on `http://localhost:5173`
+Frontend akan jalan di `http://localhost:5173`
 
-### 3. SSO Auth Service Setup
+### 4. Access Application
 
-```bash
-cd /home/potydev/SSO-PNC-TA/sso-auth
-cp .env.example .env
-go mod tidy
-go run .
-```
+Buka browser: `http://localhost:5173`
 
-### 4. Google OAuth2 Setup
-
-1. Buka [Google Cloud Console](https://console.cloud.google.com/)
-2. Buat project baru
-3. Enable **Google+ API**
-4. Credentials → Create OAuth 2.0 Client ID
-5. Authorized redirect URIs: `http://localhost:9090/api/auth/google/callback`
-6. Copy **Client ID** dan **Client Secret** ke `sso-auth/.env`
+**Login Flow:**
+1. Klik "Sign in with Google"
+2. Login dengan email @pnc.ac.id
+3. Redirect ke Dashboard
 
 ## 🎯 Features
 
 ### Completed ✅
-- Google OAuth2 authentication (@pnc.ac.id only)
-- JWT-based authorization
-- User management (Mahasiswa & Dosen)
-- Dashboard with statistics
-- Protected routes
-- Responsive UI with Tailwind CSS
+- **Authentication**: Google OAuth2 via SSO service (@pnc.ac.id only)
+- **JWT Authorization**: Token-based with 24-hour validity
+- **User Management**: Mahasiswa & Dosen profiles
+- **Dashboard**: Statistics cards + latest projects grid
+- **Protected Routes**: Role-based access control
+- **macOS Design**: Clean, minimalis, whitespace maksimal
+- **Responsive UI**: Mobile-friendly dengan Tailwind v4
+- **Skeleton Loaders**: Smooth loading states
 
-### TODO ⏳
-- Project CRUD (Create, Read, Update, Delete)
-- Project listing with filters & search
-- Project detail page with view counter
-- Image upload for project covers
+### In Progress 🚧
+- Project CRUD operations
+- Project detail page
 - My Projects page (Mahasiswa only)
-- Profile page with data from ta-sipta
+
+### Planned ⏳
+- Image upload for project covers
+- Project listing with filters & search
+- Profile page synced with ta-sipta
 - Pagination & infinite scroll
+- View counter for projects
 - Dark mode toggle
 
 ## 📡 API Endpoints
 
-### Auth
-- Endpoint auth dipindah ke service `sso-auth` (`http://localhost:9090/api/auth/*`)
+### SSO Auth Service (port 9090)
+- `GET /api/auth/google` - Get Google OAuth URL
+- `GET /api/auth/google/callback` - OAuth callback handler
+- `GET /api/auth/me` - Get current user (protected)
+- `POST /api/auth/verify` - Verify JWT token
+- `POST /api/auth/logout` - Logout user
 
-### Projects
+### TRPL Backend (port 8080)
+- `GET /health` - Health check
+
+**Projects (Public):**
 - `GET /api/projects` - List published projects
 - `GET /api/projects/:id` - Get project detail
 - `GET /api/projects/stats` - Get statistics
-- `POST /api/projects` - Create project (Mahasiswa)
-- `PUT /api/projects/:id` - Update project (Owner)
-- `DELETE /api/projects/:id` - Delete project (Owner)
-- `GET /api/my-projects` - Get user's projects (Protected)
+
+**Projects (Protected):**
+- `POST /api/projects` - Create project (Mahasiswa only)
+- `PUT /api/projects/:id` - Update project (Owner only)
+- `DELETE /api/projects/:id` - Delete project (Owner only)
+- `GET /api/my-projects` - Get user's projects
+
+## 🏗️ Architecture
+
+```
+┌──────────────────────────────────────────────────┐
+│           Frontend (React + Vite)                │
+│           http://localhost:5173                  │
+└────────────┬──────────────────┬──────────────────┘
+             │                  │
+    Auth API │                  │ Project API
+             ▼                  ▼
+  ┌──────────────────┐   ┌──────────────────┐
+  │  SSO Auth        │   │  TRPL Backend    │
+  │  Port: 9090      │   │  Port: 8080      │
+  │                  │   │                  │
+  │ - Google OAuth   │   │ - Project CRUD   │
+  │ - JWT Generate   │   │ - JWT Validate   │
+  │ - User Mgmt      │   │ - Public API     │
+  └────────┬─────────┘   └────────┬─────────┘
+           │                      │
+           └──────────┬───────────┘
+                      │
+                      ▼
+            ┌──────────────────┐
+            │ SQLite Database  │
+            │    (Shared)      │
+            └──────────────────┘
+```
 
 ## 🔒 Authentication
 
-Hanya email dengan domain **@pnc.ac.id** yang bisa login.
+**Restriction:** Only email addresses with `@pnc.ac.id` domain can login.
 
-Default role untuk user baru adalah **Mahasiswa**.
+**Default Role:** New users are assigned **Mahasiswa** role automatically.
 
-JWT token valid selama **24 jam**.
+**JWT Token:** Valid for **24 hours**.
+
+### Authentication Flow
+
+```
+1. User clicks "Login with Google"
+   ↓
+2. Frontend → GET /api/auth/google (SSO Service)
+   ↓
+3. Redirect to Google OAuth consent screen
+   ↓
+4. User approves → Google redirects to /auth/google/callback
+   ↓
+5. SSO Service validates email domain (@pnc.ac.id)
+   ↓
+6. SSO Service creates/updates user in SQLite
+   ↓
+7. SSO Service generates JWT token (signed with JWT_SECRET)
+   ↓
+8. Frontend receives token + user data
+   ↓
+9. Frontend stores token in localStorage
+   ↓
+10. Frontend requests protected routes → TRPL Backend
+    ↓
+11. TRPL Backend validates JWT (using same JWT_SECRET)
+    ↓
+12. Access granted to protected resources
+```
+
+**Critical:** `JWT_SECRET` must be identical in both SSO auth service and TRPL backend for token validation to work.
 
 ## 🗄️ Database Schema
 
-**Tables:**
+**Technology:** SQLite (shared file)
+
+**Location:** `backend/database/trpl_web.sqlite`
+
+**Shared Access:** Both SSO auth service and TRPL backend use the same SQLite file.
+
+### Tables Managed by SSO Auth Service
+- `users` - User accounts (email, role, google_id, foto_profile)
+- `mahasiswa` - Student profiles (NIM, tempat/tanggal lahir, jenis kelamin, prodi, tahun_ajaran)
+- `dosen` - Lecturer profiles (NIDN, NIP, jabatan)
+- `program_studi` - Study programs
+- `tahun_ajaran` - Academic years
+
+### Tables Managed by TRPL Backend
 - `users` - User accounts (email, role, google_id, foto_profile)
 - `mahasiswa` - Student profiles (NIM, tempat/tanggal lahir, jenis kelamin, prodi, tahun_ajaran)
 - `dosen` - Lecturer profiles (NIDN, NIP, jabatan)
@@ -159,69 +262,140 @@ JWT token valid selama **24 jam**.
 
 ## 🔧 Development
 
-### Run Backend with Hot Reload
+### Running Complete Stack
 
+You need **3 terminal windows**:
+
+**Terminal 1 - SSO Auth Service:**
 ```bash
-go install github.com/cosmtrek/air@latest
-air
+cd SSO-PNC-TA/sso-auth
+air  # or: go run main.go
 ```
 
-### Run Frontend Dev Server
-
+**Terminal 2 - TRPL Backend:**
 ```bash
+cd TRPL-Web/backend
+air  # or: go run main.go
+```
+
+**Terminal 3 - Frontend:**
+```bash
+cd TRPL-Web/frontend
 npm run dev
 ```
 
+### Hot Reload Setup
+
+```bash
+go install github.com/air-verse/air@latest
+```
+
+Then use `air` command instead of `go run main.go` for auto-reload on file changes.
+
 ### Build for Production
+
+**SSO Auth:**
+```bash
+cd SSO-PNC-TA/sso-auth
+go build -o sso-auth main.go
+./sso-auth
+```
 
 **Backend:**
 ```bash
+cd TRPL-Web/backend
 go build -o trpl-web-backend main.go
 ./trpl-web-backend
 ```
 
 **Frontend:**
 ```bash
+cd TRPL-Web/frontend
 npm run build
 npm run preview
 ```
 
 ## 📝 Environment Variables
 
-**Backend (.env):**
+### SSO Auth Service (.env)
 ```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=
-DB_NAME=trpl_web
+PORT=9090
+JWT_SECRET=your-secret-key-must-match-backend
 
-PORT=8080
-JWT_SECRET=your-secret-key
-
-GOOGLE_CLIENT_ID=your-client-id
-GOOGLE_CLIENT_SECRET=your-client-secret
-GOOGLE_REDIRECT_URL=http://localhost:8080/api/auth/google/callback
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_REDIRECT_URL=http://localhost:9090/api/auth/google/callback
 ALLOWED_DOMAIN=pnc.ac.id
 
+DB_PATH=../TRPL-Web/backend/database/trpl_web.sqlite
 FRONTEND_URL=http://localhost:5173
 ```
 
-**Frontend (.env):**
+### TRPL Backend (.env)
+```env
+PORT=8080
+JWT_SECRET=your-secret-key-must-match-backend
+
+DB_PATH=./database/trpl_web.sqlite
+FRONTEND_URL=http://localhost:5173
+```
+
+### Frontend (.env)
 ```env
 VITE_API_URL=http://localhost:8080/api
+VITE_AUTH_API_URL=http://localhost:9090/api
 ```
+
+**Important Notes:**
+- `JWT_SECRET` must be **identical** in both SSO auth and TRPL backend
+- `DB_PATH` in sso-auth points to shared SQLite file in TRPL-Web/backend/database/
+- Frontend has **two** API URLs: one for auth (9090), one for projects (8080)
 
 ## 🐛 Troubleshooting
 
+### Service Not Running
+**Check if all services are up:**
+```bash
+curl http://localhost:9090/health  # SSO Auth
+curl http://localhost:8080/health  # TRPL Backend
+curl http://localhost:5173         # Frontend
+```
+
 ### CORS Error
-Pastikan `FRONTEND_URL` di backend `.env` sesuai dengan URL frontend.
+Pastikan `FRONTEND_URL` di **kedua** service (.env) sesuai dengan URL frontend (`http://localhost:5173`).
+
+### JWT Validation Failed / 401 Unauthorized
+**Possible causes:**
+1. Token expired (24 hours) → Logout and login again
+2. `JWT_SECRET` mismatch → Ensure **identical** secret in both sso-auth and backend .env files
+3. Token not sent → Check if `Authorization: Bearer <token>` header present
 
 ### Database Connection Failed
-Cek credentials database di `.env` dan pastikan MySQL service running.
+**Check SQLite file:**
+```bash
+ls -la TRPL-Web/backend/database/trpl_web.sqlite
+```
+- File must exist and be readable
+- Both services need read/write permission
+- Check `DB_PATH` in both .env files
 
-### 401 Unauthorized
-Token expired. Logout dan login kembali.
+### Login Redirect Fails
+**Verify Google OAuth settings:**
+1. `GOOGLE_REDIRECT_URL` must match Google Console callback URL
+2. Must be `http://localhost:9090/api/auth/google/callback` (port 9090, not 8080)
+3. Check if email domain is `@pnc.ac.id`
+
+### Frontend Can't Connect to Backend
+**Check environment variables:**
+- `VITE_API_URL=http://localhost:8080/api` (TRPL Backend)
+- `VITE_AUTH_API_URL=http://localhost:9090/api` (SSO Auth)
+- Restart frontend after changing .env file
+
+### Database Locked Error
+Multiple services accessing SQLite simultaneously. This is normal and handled by SQLite's locking mechanism. If persistent:
+```bash
+fuser TRPL-Web/backend/database/trpl_web.sqlite  # Check which processes using file
+```
 
 ## 📚 Documentation
 
